@@ -3818,7 +3818,7 @@ varying vec2 vUv;
 void main() {
   vUv = uv;
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  gl_PointSize = (4500.0 * aScale) * (1.0 / -mvPosition.z);
+  gl_PointSize = (4500.0 * aScale * 1.3) * (1.0 / -mvPosition.z);
   gl_Position = projectionMatrix * mvPosition;
 }
 `,fr=[{type:"image",url:"https://raw.githubusercontent.com/pedrotasca1/portfolio-playground/refs/heads/main/a_cinematic_lo-fi_photo_with_a_vintage_film_aesthetic_the_scene_is_a_vibrant_green_football_pitch_o_slef8443yb8y4zdprcga_1.png"},{type:"image",url:"https://raw.githubusercontent.com/pedrotasca1/portfolio-playground/refs/heads/main/a_cinematic_lo-fi_photo_with_a_vintage_film_aesthetic_the_scene_is_a_vibrant_green_football_pitch_o_ki8mhujia1ng6tqklgnl_1.png"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner00.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner01.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner03.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner04.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner05.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner06.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner07.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner08.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner09.mp4"},{type:"video",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/touchdesigner10.mp4"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo00.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo01.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo02.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo03.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo04.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo05.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo06.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo07.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo08.png"},{type:"image",url:"https://cdn.jsdelivr.net/gh/pedrotasca1/portfolio-playground@main/assets/logo09.png"}],Ov=`
@@ -3829,26 +3829,37 @@ uniform float uMyTextureIndex;
 
 varying vec2 vUv;
 
-void main() {
-  vec2 uv = vec2(gl_PointCoord.x, 1.0 - gl_PointCoord.y);
-  uv -= 0.5;
-  
-  if (uAspect > 1.0) {
-    if (abs(uv.y) > 0.5 / uAspect) discard;
-    uv.y = (uv.y * uAspect) + 0.5;
-    uv.x += 0.5;
-  } else {
-    if (abs(uv.x) > 0.5 * uAspect) discard;
-    uv.x = (uv.x / uAspect) + 0.5;
-    uv.y += 0.5;
-  }
+float sdBox(in vec2 p, in vec2 b) {
+  vec2 d = abs(p) - b;
+  return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
 
-  vec4 finalColor = texture2D(uTexture, uv);
-  
-  if (abs(uMyTextureIndex - uHoverIndex) < 0.1) {
-    finalColor.rgb += vec3(0.15);
+void main() {
+  vec2 p = gl_PointCoord - 0.5;
+  vec2 halfSize;
+  if (uAspect > 1.0) {
+    halfSize = vec2(0.5 / 1.3, 0.5 / (uAspect * 1.3));
+  } else {
+    halfSize = vec2(0.5 * uAspect / 1.3, 0.5 / 1.3);
   }
-  
+  float imgDist = sdBox(p, halfSize);
+  vec2 shadowOffset = vec2(0.015, -0.015);
+  float shadowDist = sdBox(p - shadowOffset, halfSize);
+  float shadowBlur = 0.06;
+  float shadowOpacity = smoothstep(shadowBlur, 0.0, shadowDist);
+  vec4 shadowColor = vec4(0.0, 0.0, 0.0, 0.20 * shadowOpacity);
+  vec4 finalColor = vec4(0.0);
+  if (imgDist <= 0.0) {
+    vec2 mappedUv = vec2(p.x, -p.y) / halfSize * 0.5 + 0.5;
+    vec4 texColor = texture2D(uTexture, mappedUv);
+    if (abs(uMyTextureIndex - uHoverIndex) < 0.1) {
+      texColor.rgb += vec3(0.15);
+    }
+    finalColor = mix(shadowColor, texColor, texColor.a);
+  } else {
+    finalColor = shadowColor;
+  }
+  if (finalColor.a <= 0.01) discard;
   gl_FragColor = finalColor;
 }
 `,Fv=document.getElementById("app"),qo=new r0,In=new en(75,window.innerWidth/window.innerHeight,.1,1e3);In.position.z=10;qo.add(In);const Li=new i0({antialias:!0,alpha:!0});Li.setSize(window.innerWidth,window.innerHeight);Li.setPixelRatio(Math.min(window.devicePixelRatio,2));Fv.appendChild(Li.domElement);const gn=new m0(In,Li.domElement);gn.enableDamping=!0;gn.dampingFactor=.05;gn.minDistance=5;gn.maxDistance=60;gn.enablePan=!1;gn.autoRotate=!0;gn.autoRotateSpeed=.5;window.addEventListener("wheel",r=>{if(Math.abs(r.deltaX)>Math.abs(r.deltaY)){const t=r.deltaX*.005,e=In.position.clone().sub(gn.target);e.applyAxisAngle(new I(0,1,0),t),In.position.copy(gn.target).add(e)}},{passive:!0});const xh=new h0;xh.setCrossOrigin("anonymous");const Zs=new Float32Array(fr.length).fill(1),Bv=fr.map((r,t)=>{if(r.type==="video"){const e=document.createElement("video");e.src=r.url,e.crossOrigin="anonymous",e.loop=!0,e.muted=!0,e.playsInline=!0,e.addEventListener("loadedmetadata",()=>{Zs[t]=e.videoWidth/e.videoHeight}),e.play();const n=new o0(e);return n.minFilter=Pe,n.magFilter=Pe,n}else return xh.load(r.url,e=>{Zs[t]=e.image.width/e.image.height})}),zv=150,kv=22,Hv=500,er=[],Ns=Array.from({length:fr.length},()=>({start:[],target:[],scales:[]})),Vv=35;for(let r=0;r<zv;r++){const t=r<fr.length,e=(Math.random()-.5)*200,n=(Math.random()-.5)*200,i=(Math.random()-.5)*100+100;let s=!1,a=0,o,l,c;for(;!s&&a<Hv;){if(t){const f=Math.random()*Math.PI*2,m=35+Math.random()*15;o=Math.cos(f)*m,l=(Math.random()-.5)*80,c=Math.sin(f)*m}else o=(Math.random()-.5)*120,l=(Math.random()-.5)*100,c=(Math.random()-.5)*120,Math.sqrt(o*o+c*c)>30&&(o*=.6,c*=.6);s=!0;for(let f=0;f<er.length;f++){const m=er[f].pos,v=m.x-o,_=m.y-l,d=m.z-c,p=t?35:kv;if(Math.sqrt(v*v+_*_+d*d)<p){s=!1;break}}a++}let u;if(t)u=r;else{const f=new Set;for(let v=0;v<er.length;v++){const _=er[v].pos,d=_.x-o,p=_.y-l,E=_.z-c;Math.sqrt(d*d+p*p+E*E)<Vv&&f.add(er[v].texIndex)}const m=[];for(let v=0;v<fr.length;v++)f.has(v)||m.push(v);m.length>0?u=m[Math.floor(Math.random()*m.length)]:u=Math.floor(Math.random()*fr.length)}const h=t?2.5:.5+Math.random()*.8;er.push({pos:new I(o,l,c),texIndex:u}),Ns[u].start.push(e,n,i),Ns[u].target.push(o,l,c),Ns[u].scales.push(h)}const aa=[],Kr={uTime:{value:0},uHoverIndex:{value:-1}};Ns.forEach((r,t)=>{if(r.start.length===0)return;const e=new Nn,n=new Float32Array(r.start),i=new Float32Array(r.target),s=new Float32Array(r.scales);e.setAttribute("position",new De(new Float32Array(n),3)),e.setAttribute("aStartPos",new De(n,3)),e.setAttribute("aTargetPosition",new De(i,3)),e.setAttribute("aScale",new De(s,1));const a=new Ln({vertexShader:Nv,fragmentShader:Ov,uniforms:{uTime:Kr.uTime,uHoverIndex:Kr.uHoverIndex,uTexture:{value:Bv[t]},uAspect:{value:Zs[t]},uMyTextureIndex:{value:t}},transparent:!0,depthWrite:!1}),o=new a0(e,a);qo.add(o),aa.push(o)});const Gv=Ks.timeline(),Cs={progress:0};Gv.to(Cs,{progress:1,duration:3.5,ease:"power4.out",onUpdate:()=>{aa.forEach(r=>{const t=r.geometry.attributes.position,e=r.geometry.attributes.aStartPos,n=r.geometry.attributes.aTargetPosition;for(let i=0;i<t.count;i++){const s=e.getX(i),a=e.getY(i),o=e.getZ(i),l=n.getX(i),c=n.getY(i),u=n.getZ(i);t.setXYZ(i,Ps.lerp(s,l,Cs.progress),Ps.lerp(a,c,Cs.progress),Ps.lerp(o,u,Cs.progress))}t.needsUpdate=!0})}});const yo=new d0;yo.params.Points.threshold=.5;const $a=new Tt;window.addEventListener("mousemove",r=>{$a.x=r.clientX/window.innerWidth*2-1,$a.y=-(r.clientY/window.innerHeight)*2+1,yo.setFromCamera($a,In);const t=yo.intersectObjects(aa);if(t.length>0){const e=t[0].object.material.uniforms.uMyTextureIndex.value;Ks.to(Kr.uHoverIndex,{value:e,duration:.3}),document.body.style.cursor="pointer"}else Ks.to(Kr.uHoverIndex,{value:-1,duration:.3}),document.body.style.cursor="default"});window.addEventListener("resize",()=>{In.aspect=window.innerWidth/window.innerHeight,In.updateProjectionMatrix(),Li.setSize(window.innerWidth,window.innerHeight),Li.setPixelRatio(Math.min(window.devicePixelRatio,2))});const Wv=new f0,Mh=()=>{const r=Wv.getElapsedTime();Kr.uTime.value=r,aa.forEach(t=>{t.material.uniforms.uAspect.value=Zs[t.material.uniforms.uMyTextureIndex.value]}),gn.update(),Li.render(qo,In),window.requestAnimationFrame(Mh)};Mh();
